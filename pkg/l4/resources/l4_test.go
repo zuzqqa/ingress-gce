@@ -51,6 +51,7 @@ import (
 	"k8s.io/cloud-provider-gcp/providers/gce"
 	servicehelper "k8s.io/cloud-provider/service/helpers"
 	"k8s.io/ingress-gce/pkg/composite"
+	l4utils "k8s.io/ingress-gce/pkg/l4/utils"
 	"k8s.io/ingress-gce/pkg/test"
 	namer_util "k8s.io/ingress-gce/pkg/utils/namer"
 )
@@ -2865,7 +2866,7 @@ func assertDualStackILBResourcesWithCustomSubnet(t *testing.T, l4 *L4, nodeNames
 		t.Errorf("getAndVerifyBackendService(_, %v) returned error %v, want nil", healthCheck, err)
 	}
 
-	if utils.NeedsIPv4(l4.Service) {
+	if l4utils.NeedsIPv4(l4.Service) {
 		err = verifyILBIPv4ForwardingRule(l4, backendService.SelfLink, expectedSubnet)
 		if err != nil {
 			t.Errorf("verifyILBIPv4ForwardingRule(_, %s) returned error %v, want nil", backendService.SelfLink, err)
@@ -2886,7 +2887,7 @@ func assertDualStackILBResourcesWithCustomSubnet(t *testing.T, l4 *L4, nodeNames
 			t.Errorf("verifyILBIPv4ResourcesDeletedOnSync(_) returned error %v, want nil", err)
 		}
 	}
-	if utils.NeedsIPv6(l4.Service) {
+	if l4utils.NeedsIPv6(l4.Service) {
 		err = verifyILBIPv6ForwardingRule(l4, backendService.SelfLink, expectedSubnet)
 		if err != nil {
 			t.Errorf("verifyILBIPv6ForwardingRule(_, %s) returned error %v, want nil", backendService.SelfLink, err)
@@ -2928,7 +2929,7 @@ func buildExpectedAnnotations(l4 *L4) map[string]string {
 		annotations.HealthcheckKey:    hcName,
 	}
 
-	if utils.NeedsIPv4(l4.Service) {
+	if l4utils.NeedsIPv4(l4.Service) {
 		hcFwName := l4.namer.L4HealthCheckFirewall(l4.Service.Namespace, l4.Service.Name, sharedHCFW)
 
 		expectedAnnotations[annotations.FirewallRuleForHealthcheckKey] = hcFwName
@@ -2941,7 +2942,7 @@ func buildExpectedAnnotations(l4 *L4) map[string]string {
 			expectedAnnotations[annotations.UDPForwardingRuleKey] = ipv4FRName
 		}
 	}
-	if utils.NeedsIPv6(l4.Service) {
+	if l4utils.NeedsIPv6(l4.Service) {
 		ipv6hcFwName := l4.namer.L4IPv6HealthCheckFirewall(l4.Service.Namespace, l4.Service.Name, sharedHCFW)
 		ipv6FirewallName := l4.namer.L4IPv6Firewall(l4.Service.Namespace, l4.Service.Name)
 
