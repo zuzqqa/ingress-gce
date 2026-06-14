@@ -605,7 +605,7 @@ func (l4netlb *L4NetLB) ensureIPv4NodesFirewall(nodeNames []string, ipAddress st
 		Network:           l4netlb.networkInfo,
 		Priority:          l4netlb.allowFirewallPriority(),
 	}
-	var firewallForNodesUpdateStatus utils.ResourceSyncStatus
+	var firewallForNodesUpdateStatus l4utils.ResourceSyncStatus
 	firewallForNodesUpdateStatus, err = firewalls.EnsureL4LBFirewallForNodes(l4netlb.Service, &nodesFWRParams, l4netlb.cloud, l4netlb.recorder, fwLogger)
 	result.GCEResourceUpdate.SetFirewallForNodes(firewallForNodesUpdateStatus)
 	if err != nil {
