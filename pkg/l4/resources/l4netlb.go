@@ -588,7 +588,7 @@ func (l4netlb *L4NetLB) ensureIPv4NodesFirewall(nodeNames []string, ipAddress st
 		fwLogger.V(2).Info("Finished ensuring nodes firewall for L4 NetLB Service", "timeTaken", time.Since(start))
 	}()
 
-	sourceRanges, err := utils.IPv4ServiceSourceRanges(l4netlb.Service)
+	sourceRanges, err := l4utils.IPv4ServiceSourceRanges(l4netlb.Service)
 	if err != nil {
 		result.Error = err
 		return

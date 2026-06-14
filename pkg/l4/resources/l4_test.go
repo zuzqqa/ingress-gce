@@ -3069,9 +3069,9 @@ func verifyILBIPv4NodesFirewall(l4 *L4, nodeNames []string) error {
 		return fmt.Errorf("failed to create description for resources, err %w", err)
 	}
 
-	sourceRanges, err := utils.IPv4ServiceSourceRanges(l4.Service)
+	sourceRanges, err := l4utils.IPv4ServiceSourceRanges(l4.Service)
 	if err != nil {
-		return fmt.Errorf("utils.IPv4ServiceSourceRanges(%+v) returned error %v, want nil", l4.Service, err)
+		return fmt.Errorf("l4utils.IPv4ServiceSourceRanges(%+v) returned error %v, want nil", l4.Service, err)
 	}
 	return verifyFirewall(l4.cloud, nodeNames, fwName, fwDesc, sourceRanges, l4.network.NetworkURL)
 }
@@ -3084,9 +3084,9 @@ func verifyILBIPv6NodesFirewall(l4 *L4, nodeNames []string) error {
 		return fmt.Errorf("failed to create description for resources, err %w", err)
 	}
 
-	sourceRanges, err := utils.IPv6ServiceSourceRanges(l4.Service)
+	sourceRanges, err := l4utils.IPv6ServiceSourceRanges(l4.Service)
 	if err != nil {
-		return fmt.Errorf("utils.IPv6ServiceSourceRanges(%+v) returned error %v, want nil", l4.Service, err)
+		return fmt.Errorf("l4utils.IPv6ServiceSourceRanges(%+v) returned error %v, want nil", l4.Service, err)
 	}
 	return verifyFirewall(l4.cloud, nodeNames, ipv6FirewallName, fwDesc, sourceRanges, l4.network.NetworkURL)
 }

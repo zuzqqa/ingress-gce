@@ -759,7 +759,7 @@ func (l4 *L4) ensureIPv4NodesFirewall(nodeNames []string, ipAddress string, resu
 	}()
 
 	// ensure firewalls
-	ipv4SourceRanges, err := utils.IPv4ServiceSourceRanges(l4.Service)
+	ipv4SourceRanges, err := l4utils.IPv4ServiceSourceRanges(l4.Service)
 	if err != nil {
 		result.Error = err
 		return
