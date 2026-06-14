@@ -287,6 +287,23 @@ func (p *Pool) EnsureL4BackendService(params L4BackendServiceParams, beLogger kl
 		LocalityLbPolicy:    string(params.LocalityLbPolicy),
 	}
 
+	if flags.F.EnableL4OrchestrationInfo && flags.F.GKEClusterName != "" {
+		resourceUri := ""
+		if p.cloud.Regional() {
+			resourceUri = fmt.Sprintf("//container.googleapis.com/projects/%s/locations/%s/clusters/%s/k8s/namespaces/%s/services/%s",
+				p.cloud.ProjectID(), p.cloud.Region(), flags.F.GKEClusterName, params.NamespacedName.Namespace, params.NamespacedName.Name)
+		} else {
+			resourceUri = fmt.Sprintf("//container.googleapis.com/projects/%s/zones/%s/clusters/%s/k8s/namespaces/%s/services/%s",
+				p.cloud.ProjectID(), p.cloud.LocalZone(), flags.F.GKEClusterName, params.NamespacedName.Namespace, params.NamespacedName.Name)
+		}
+		beLogger.V(2).Info("EnsureL4BackendService: Populated OrchestrationInfo", "resourceUri", resourceUri)
+		expectedBS.OrchestrationInfo = &composite.BackendServiceOrchestrationInfo{
+			ResourceUri: resourceUri,
+		}
+	} else {
+		beLogger.V(2).Info("EnsureL4BackendService: OrchestrationInfo not populated", "enableL4OrchestrationInfo", flags.F.EnableL4OrchestrationInfo, "gkeClusterName", flags.F.GKEClusterName)
+	}
+
 	if params.LogConfigControlEnabled {
 		beLogger.V(2).Info("EnsureL4BackendService: using provided LogConfig for backend service", "logConfig", params.LogConfig)
 		expectedBS.LogConfig = params.LogConfig
@@ -411,6 +428,9 @@ func backendSvcEqual(newBS, oldBS *composite.BackendService, compareConnectionTr
 
 	// If zonal affinity is set, needs to be equal
 	svcsEqual = svcsEqual && zonalAffinityEqual(newBS, oldBS)
+	if flags.F.EnableL4OrchestrationInfo {
+		svcsEqual = svcsEqual && orchestrationInfoEqual(newBS.OrchestrationInfo, oldBS.OrchestrationInfo)
+	}
 	return svcsEqual
 }
 
@@ -505,4 +525,14 @@ func zonalAffinityDisabledTrafficPolicy() *composite.BackendServiceNetworkPassTh
 			SpilloverRatio: DefaultZonalAffinitySpilloverRatio,
 		},
 	}
+}
+
+func orchestrationInfoEqual(newInfo, oldInfo *composite.BackendServiceOrchestrationInfo) bool {
+	if newInfo == nil && oldInfo == nil {
+		return true
+	}
+	if newInfo == nil || oldInfo == nil {
+		return false
+	}
+	return newInfo.ResourceUri == oldInfo.ResourceUri
 }

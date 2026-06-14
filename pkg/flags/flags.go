@@ -155,6 +155,7 @@ var F = struct {
 	EnablePSCReconcileConnections               bool
 	// EnableL4DenyFirewallExplicitlySet will be set to true if the argument was explicitly set by the user.
 	EnableL4DenyFirewallExplicitlySet bool
+	EnableL4OrchestrationInfo bool
 	// ===============================
 	// DEPRECATED FLAGS
 	// ===============================
@@ -371,6 +372,7 @@ L7 load balancing. CSV values accepted. Example: -node-port-ranges=80,8080,400-5
 	flag.BoolVar(&F.EnableIPv6NodeNEGEndpoints, "enable-ipv6-node-neg-endpoints", false, "Enable populating IPv6 addresses for Node IPs in GCE_VM_IP NEGs.")
 	flag.BoolVar(&F.EnableL4NEGDetachCancel, "enable-l4-neg-detach-cancel", false, "Enable cancelling NEG detach when endpoints need to be re-attached.")
 	flag.BoolVar(&F.EnablePSCReconcileConnections, "enable-psc-reconcile-connections", false, "Enable support for PSC ServiceAttachment reconcile connections field")
+	flag.BoolVar(&F.EnableL4OrchestrationInfo, "enable-l4-orchestration-info", false, "Enable setting OrchestrationInfo on L4 BackendServices.")
 }
 
 func Validate() {
