@@ -79,8 +79,6 @@ const (
 	GKECurrentOperationLabel = "operation.gke.io/type"
 	// NodeDrain is the string used to indicate the Node Draining operation.
 	NodeDrain               = "drain"
-	L4ILBServiceDescKey     = "networking.gke.io/service-name"
-	L4LBSharedResourcesDesc = "This resource is shared by all L4 %s Services using ExternalTrafficPolicy: Cluster."
 
 	// LabelAlphaNodeRoleExcludeBalancer specifies that the node should be
 	// exclude from load balancers created by a cloud provider. This label is deprecated and will
@@ -92,21 +90,6 @@ const (
 	// LabelNodeSubnet specifies the subnet name of this node.
 	LabelNodeSubnet = "cloud.google.com/gke-node-pool-subnet"
 )
-
-// L4LBType indicates if L4 LoadBalancer is Internal or External
-type L4LBType int
-
-const (
-	ILB L4LBType = iota
-	XLB
-)
-
-func (lbType L4LBType) ToString() string {
-	if lbType == ILB {
-		return "ILB"
-	}
-	return "XLB"
-}
 
 // FrontendGCAlgorithm species GC algorithm used for ingress frontend resources.
 type FrontendGCAlgorithm int
@@ -609,87 +592,8 @@ func TranslateAffinityType(affinityType string, logger klog.Logger) string {
 	}
 }
 
-// IsLegacyL4ILBService returns true if the given LoadBalancer service is managed by service controller.
-func IsLegacyL4ILBService(svc *api_v1.Service) bool {
-	if svc.Spec.LoadBalancerClass != nil {
-		return l4annotations.HasLoadBalancerClass(svc, l4annotations.LegacyRegionalInternalLoadBalancerClass)
-	}
-	return HasLegacyL4ILBFinalizerV1(svc)
-}
-
-// HasLegacyL4ILBFinalizerV1 returns true if the given Service has ILBFinalizerV1
-func HasLegacyL4ILBFinalizerV1(svc *api_v1.Service) bool {
-	return slice.ContainsString(svc.ObjectMeta.Finalizers, common.LegacyILBFinalizer, nil)
-}
-
-// IsSubsettingL4ILBService returns true if the given LoadBalancer service is managed by NEG and L4 controller.
-func IsSubsettingL4ILBService(svc *api_v1.Service) bool {
-	if svc.Spec.LoadBalancerClass != nil {
-		return l4annotations.HasLoadBalancerClass(svc, l4annotations.RegionalInternalLoadBalancerClass)
-	}
-	return HasL4ILBFinalizerV2(svc)
-}
-
-// HasL4ILBFinalizerV2 returns true if the given Service has ILBFinalizerV2
-func HasL4ILBFinalizerV2(svc *api_v1.Service) bool {
-	return slice.ContainsString(svc.ObjectMeta.Finalizers, common.ILBFinalizerV2, nil)
-}
-
-// HasL4NetLBFinalizerV2 returns true if the given Service has NetLBFinalizerV2
-func HasL4NetLBFinalizerV2(svc *api_v1.Service) bool {
-	return slice.ContainsString(svc.ObjectMeta.Finalizers, common.NetLBFinalizerV2, nil)
-}
-
-// HasL4NetLBFinalizerV3 returns true if the given Service has NetLBFinalizerV3
-func HasL4NetLBFinalizerV3(svc *api_v1.Service) bool {
-	return slice.ContainsString(svc.ObjectMeta.Finalizers, common.NetLBFinalizerV3, nil)
-}
-
 func LegacyForwardingRuleName(svc *api_v1.Service) string {
 	return cloudprovider.DefaultLoadBalancerName(svc)
-}
-
-// L4LBResourceDescription stores the description fields for L4 ILB or NetLB resources.
-// This is useful to identify which resources correspond to which L4 LB service.
-type L4LBResourceDescription struct {
-	// ServiceName indicates the name of the service the resource is for.
-	ServiceName string `json:"networking.gke.io/service-name"`
-	// APIVersion stores the version og the compute API used to create this resource.
-	APIVersion          meta.Version `json:"networking.gke.io/api-version,omitempty"`
-	ServiceIP           string       `json:"networking.gke.io/service-ip,omitempty"`
-	ResourceDescription string       `json:"networking.gke.io/resource-description,omitempty"`
-}
-
-// Marshal returns the description as a JSON-encoded string.
-func (d *L4LBResourceDescription) Marshal() (string, error) {
-	out, err := json.Marshal(d)
-	if err != nil {
-		return "", err
-	}
-	return string(out), err
-}
-
-// Unmarshal converts the JSON-encoded description string into the struct.
-func (d *L4LBResourceDescription) Unmarshal(desc string) error {
-	return json.Unmarshal([]byte(desc), d)
-}
-
-func MakeL4LBFirewallDescription(svcName, ip string, version meta.Version, shared bool) (string, error) {
-	if shared {
-		return (&L4LBResourceDescription{APIVersion: version, ResourceDescription: fmt.Sprintf(L4LBSharedResourcesDesc, "")}).Marshal()
-	}
-	return (&L4LBResourceDescription{ServiceName: svcName, ServiceIP: ip, APIVersion: version}).Marshal()
-}
-
-func MakeL4LBServiceDescription(svcName, ip string, version meta.Version, shared bool, lbType L4LBType) (string, error) {
-	if shared {
-		return (&L4LBResourceDescription{APIVersion: version, ResourceDescription: fmt.Sprintf(L4LBSharedResourcesDesc, lbType.ToString())}).Marshal()
-	}
-	return (&L4LBResourceDescription{ServiceName: svcName, ServiceIP: ip, APIVersion: version}).Marshal()
-}
-
-func MakeL4IPv6ForwardingRuleDescription(service *api_v1.Service) (string, error) {
-	return (&L4LBResourceDescription{ServiceName: ServiceKeyFunc(service.Namespace, service.Name)}).Marshal()
 }
 
 // GetBasePath returns the compute API endpoint with the `projects/<project-id>` element
